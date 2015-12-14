@@ -29,7 +29,7 @@ public:
 
         videoFrames = yuvIstr.tellg() / frameSize;
         cout << "Opened YUV video file with " << videoFrames << " frames. " << endl; 
-        currentFrame = -100;
+        currentFrame = videoFrames - 1;
         barFrame = 0;
         namedWindow("Video", 1);
         createTrackbar("Seek", "Video", &barFrame, videoFrames - 1, onTrackbar, this); 
