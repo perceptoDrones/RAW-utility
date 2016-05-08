@@ -1,2 +1,2 @@
-# YUV-utility
-Play &amp; manipulate YUV video files. 
+# RAW-utility
+Play &amp; manipulate RAW video files. 

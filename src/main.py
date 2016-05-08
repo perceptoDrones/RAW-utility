@@ -22,12 +22,16 @@ class yuvReader:
         self.videoWidth  = videoWidth
         self.videoHeight = videoHeight
         self.frameRate   = frameRate
-        self.frameSize   = videoWidth * videoHeight * 3 / 2
-        self.yuv = open(fileName, "rb")
-        self.yuv.seek(0, 2)
-        self.videoFrames = self.yuv.tell() / self.frameSize
+        self.useYUV      = fileName.endswith(".yuv")
+        if (self.useYUV):
+            self.frameSize   = videoWidth * videoHeight * 3 / 2
+        else:
+            self.frameSize   = videoWidth * videoHeight * 3
+        self.file = open(fileName, "rb")
+        self.file.seek(0, 2)
+        self.videoFrames = self.file.tell() / self.frameSize
         self.currentFrame = self.videoFrames - 1
-        print "Opened YUV video file with", self.videoFrames, "frames. "
+        print "Opened video file with", self.videoFrames, "frames. "
         cv2.namedWindow('Video')
         cv2.createTrackbar('Seek', 'Video', 0, self.videoFrames - 1, self.onTrackbar)
         self.showFrame(0)
@@ -47,30 +51,47 @@ class yuvReader:
 
         # Seek frame (if not already there):
         if self.currentFrame + 1 != frame:
-            self.yuv.seek(frame * self.frameSize, 0)
+            self.file.seek(frame * self.frameSize, 0)
         
         # Read data:
-        data = np.fromstring(self.yuv.read(self.frameSize), dtype=np.uint8)
+        data = np.fromstring(self.file.read(self.frameSize), dtype=np.uint8)
         
-        # Split to channels: 
-        (Y1, Y2, UV) = np.split(data, 3)
-        Y = np.concatenate((Y1, Y2))
-        (U, V) = np.split(UV,   2)
+        # Decode & show YUV:
+        if (self.useYUV):
 
-        # Re-arrange:
-        Y = np.reshape(Y, (self.videoHeight, self.videoWidth))
-        U = np.repeat(U, 2, 0)
-        U = np.reshape(U, (self.videoHeight / 2, self.videoWidth))
-        U = np.repeat(U, 2, 0)
-        V = np.repeat(V, 2, 0)
-        V = np.reshape(V, (self.videoHeight / 2, self.videoWidth))
-        V = np.repeat(V, 2, 0)
+            # Split to channels: 
+            (Y1, Y2, UV) = np.split(data, 3)
+            Y = np.concatenate((Y1, Y2))
+            (U, V) = np.split(UV,   2)
 
-        # Stack & convert color:
-        rgbFrame = cv2.cvtColor(np.dstack((Y,U,V)), cv2.COLOR_YUV2RGB)
+            # Re-arrange:
+            Y = np.reshape(Y, (self.videoHeight, self.videoWidth))
+            U = np.repeat(U, 2, 0)
+            U = np.reshape(U, (self.videoHeight / 2, self.videoWidth))
+            U = np.repeat(U, 2, 0)
+            V = np.repeat(V, 2, 0)
+            V = np.reshape(V, (self.videoHeight / 2, self.videoWidth))
+            V = np.repeat(V, 2, 0)
 
-        # Show image: 
-        cv2.imshow('Video', rgbFrame)
+            # Stack & convert color:
+            rgbFrame = cv2.cvtColor(np.dstack((Y,U,V)), cv2.COLOR_YUV2RGB)
+
+            # Show image: 
+            cv2.imshow('Video', rgbFrame)
+
+        # Decode & show RGB:
+        else:
+
+            # Stack & convert color:
+            rgbFrame = np.reshape(data, (self.videoHeight, self.videoWidth, 3))
+
+            # Convert color:
+            rgbFrame = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR)
+
+            # Show image: 
+            print rgbFrame.shape
+            cv2.imshow('Video', rgbFrame)
+
 
         # Set current frame:
         self.currentFrame = frame
