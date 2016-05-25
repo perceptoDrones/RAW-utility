@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Import libraries: 
+# Import libraries:
 import numpy as np
 import cv2
 import sys
@@ -15,10 +15,10 @@ class state(Enum):
 
 
 # YUV Reader class:
-class yuvReader:
+class rawReader:
 
     # Constructor:
-    def __init__(self, fileName, videoWidth = 640, videoHeight = 480, frameRate = 30): 
+    def __init__(self, fileName, videoWidth = 640, videoHeight = 480, frameRate = 30):
         self.videoWidth  = videoWidth
         self.videoHeight = videoHeight
         self.frameRate   = frameRate
@@ -39,12 +39,12 @@ class yuvReader:
     # Show frame:
     def showFrame(self, frame):
 
-        # Make sure the requested frame is in bound: 
+        # Make sure the requested frame is in bound:
         if frame < 0:
             frame = 0
         elif frame >= self.videoFrames:
             frame = self.videoFrames - 1
-        
+
         # Do nothing if already shown:
         if self.currentFrame == frame:
             return
@@ -52,14 +52,14 @@ class yuvReader:
         # Seek frame (if not already there):
         if self.currentFrame + 1 != frame:
             self.file.seek(frame * self.frameSize, 0)
-        
+
         # Read data:
         data = np.fromstring(self.file.read(self.frameSize), dtype=np.uint8)
-        
+
         # Decode & show YUV:
         if (self.useYUV):
 
-            # Split to channels: 
+            # Split to channels:
             (Y1, Y2, UV) = np.split(data, 3)
             Y = np.concatenate((Y1, Y2))
             (U, V) = np.split(UV,   2)
@@ -76,7 +76,7 @@ class yuvReader:
             # Stack & convert color:
             rgbFrame = cv2.cvtColor(np.dstack((Y,U,V)), cv2.COLOR_YUV2RGB)
 
-            # Show image: 
+            # Show image:
             cv2.imshow('Video', rgbFrame)
 
         # Decode & show RGB:
@@ -88,8 +88,7 @@ class yuvReader:
             # Convert color:
             rgbFrame = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR)
 
-            # Show image: 
-            print rgbFrame.shape
+            # Show image:
             cv2.imshow('Video', rgbFrame)
 
 
@@ -99,11 +98,11 @@ class yuvReader:
         # Set seek bar:
         cv2.setTrackbarPos("Seek", "Video", frame)
 
-    # Check if last frame: 
+    # Check if last frame:
     def lastFrame(self):
         return self.currentFrame == self.videoFrames - 1
 
-    # Next frame: 
+    # Next frame:
     def nextFrame(self):
         return self.currentFrame + 1
 
@@ -120,23 +119,23 @@ class yuvReader:
 # Main:
 def main():
 
-    # Check arguments: 
+    # Check arguments:
     if len(sys.argv) < 2:
         print "Missing arguments. "
-        sys.exit(1) 
+        sys.exit(1)
 
-    # Open YUV reader: 
-    reader = yuvReader(sys.argv[1])
+    # Open YUV reader:
+    reader = rawReader(sys.argv[1])
 
     # Play video:
     running = state.PLAY
-    while (running is not state.STOP): 
+    while (running is not state.STOP):
 
-        # Pause if at the end of the video: 
-        if reader.lastFrame(): 
+        # Pause if at the end of the video:
+        if reader.lastFrame():
             running = state.PAUSE
 
-        # Next frame: 
+        # Next frame:
         if (running is state.PLAY):
             reader.showFrame(reader.nextFrame())
 
@@ -171,7 +170,7 @@ def main():
         elif key != -1:
             print "Unidentified key detected: ", key
 
-    # Close window: 
+    # Close window:
     cv2.destroyAllWindows()
 
 

@@ -11,84 +11,118 @@ enum running_e {PLAY, PAUSE, STOP};
 
 const unsigned int FPS = 30;
 
-class yuvReader {
+class rawReader {
 
 public:
 
-    // Constructor: 
-    yuvReader(const char * filePath, int width = 640, int height = 480) {
+    // Constructor:
+    rawReader(char * filePath, int width = 640, int height = 480) {
+
+        // Check file type:
+        char * dot = strrchr(filePath, '.');
+        if (dot && !strcmp(dot, ".yuv")) useYUV = true;
+
+        // Set video parameters:
         videoWidth  = width;
         videoHeight = height;
-        frameSize = width * height * 3 / 2;
-        yuvIstr.open(filePath, ios::binary | ios::ate);
-        
-        if (!yuvIstr.good()) {
+        frameSize = useYUV ? (width * height * 3 / 2) : (width * height * 3);
+
+        // Open file:
+        ifs.open(filePath, ios::binary | ios::ate);
+        if (!ifs.good()) {
             cerr << "Error: Unable to open video file: " << filePath << endl;
-            return; 
+            return;
         }
 
-        videoFrames = yuvIstr.tellg() / frameSize;
-        cout << "Opened YUV video file with " << videoFrames << " frames. " << endl; 
+        // Get number of frames:
+        videoFrames = ifs.tellg() / frameSize;
+        cout << "Opened RAW video file with " << videoFrames << " frames. " << endl;
         currentFrame = videoFrames - 1;
+
+        // Create window:
         barFrame = 0;
         namedWindow("Video", 1);
-        createTrackbar("Seek", "Video", &barFrame, videoFrames - 1, onTrackbar, this); 
+        createTrackbar("Seek", "Video", &barFrame, videoFrames - 1, onTrackbar, this);
         showFrame(0);
+
     }
 
     // Show frame:
     void showFrame(long frame) {
 
-        // Make sure the requested frame is in bound: 
+        // Make sure the requested frame is in bound:
         if (frame < 0) frame = 0;
         if (frame >= videoFrames) frame = videoFrames - 1;
-        
+
         // Do nothing if already shown:
         if (currentFrame == frame) return;
 
         // Seek frame (if not already there):
         // if (currentFrame + 1 != frame) {
-            yuvIstr.seekg(frame * frameSize, ios_base::beg);
+            ifs.seekg(frame * frameSize, ios_base::beg);
         // }
 
-        // Read data: 
+        // Read data:
         char data[(int)frameSize];
-        yuvIstr.read(data, frameSize);
-        
-        // Check that all is good: 
-        if (!yuvIstr.good()) {
+        ifs.read(data, frameSize);
+
+        // Check that all is good:
+        if (!ifs.good()) {
             cerr << "Error in reading frame #" << frame << " (" << frame * frameSize << "). " << endl;
-            return; 
+            return;
         }
 
-        // Arrange data:
+        // Image construct:
         cv::Mat mat(480, 640, CV_8UC3);
-        for (int i = 0; i < videoHeight; i++) {
-            for (int j = 0; j < videoWidth; j++) {
-                cv::Vec3b YUV;
-                YUV[0] = data[i*videoWidth+j];
-                YUV[2] = data[videoWidth * videoHeight +                                        (i / 2) * (videoWidth / 2) + (j / 2)];
-                YUV[1] = data[videoWidth * videoHeight + (videoWidth / 2) * (videoHeight / 2) + (i / 2) * (videoWidth / 2) + (j / 2)];
-                mat.at<cv::Vec3b>(i, j) = YUV;
+
+        // for YUV:
+        if (useYUV) {
+
+            // Arrange data:
+            for (int i = 0; i < videoHeight; i++) {
+                for (int j = 0; j < videoWidth; j++) {
+                    cv::Vec3b YUV;
+                    YUV[0] = data[i*videoWidth+j];
+                    YUV[2] = data[videoWidth * videoHeight +                                        (i / 2) * (videoWidth / 2) + (j / 2)];
+                    YUV[1] = data[videoWidth * videoHeight + (videoWidth / 2) * (videoHeight / 2) + (i / 2) * (videoWidth / 2) + (j / 2)];
+                    mat.at<cv::Vec3b>(i, j) = YUV;
+                }
             }
+
+            // Convert color:
+            cvtColor(mat, mat, CV_YUV2BGR);
+
         }
 
-        // Convert color:
-        cvtColor(mat, mat, CV_YUV2BGR);
-        
+        // For RGB:
+        else {
+
+            // Arrange data:
+            for (int i = 0; i < videoHeight; i++) {
+                for (int j = 0; j < videoWidth; j++) {
+                    cv::Vec3b RGB;
+                    RGB[2] = data[3 * i * videoWidth + 3 * j];
+                    RGB[1] = data[3 * i * videoWidth + 3 * j + 1];
+                    RGB[0] = data[3 * i * videoWidth + 3 * j + 2];
+                    mat.at<cv::Vec3b>(i, j) = RGB;
+                }
+            }
+
+        }
+
         // Show image:
-        imshow("Video", mat); 
+        imshow("Video", mat);
 
         // Set seek bar:
-        setTrackbarPos("Seek", "Video", frame); 
-        
+        setTrackbarPos("Seek", "Video", frame);
+
         // Set shown frame:
         currentFrame = frame;
 
     }
 
-    inline long getFrame() { 
-        return currentFrame; 
+    inline long getFrame() {
+        return currentFrame;
     }
 
     inline long nextFrame() {
@@ -104,27 +138,28 @@ public:
     }
 
     inline bool sourceGood() {
-        return yuvIstr.good();
+        return ifs.good();
     }
 
-private: 
+private:
 
     static void onTrackbar(int, void * This) {
-        ((yuvReader *)This)->onTrackbarNonStatic();        
+        ((rawReader *)This)->onTrackbarNonStatic();
     }
 
     void onTrackbarNonStatic() {
         showFrame(barFrame);
     }
 
-    ifstream yuvIstr;
+    ifstream ifs;
     unsigned int videoWidth, videoHeight;
-    long frameSize; 
-    long currentFrame; 
+    long frameSize;
+    long currentFrame;
     long videoFrames;
     int barFrame;
+    bool useYUV;
 
-}; 
+};
 
 
 int main(int argc, char* argv[]) {
@@ -134,23 +169,23 @@ int main(int argc, char* argv[]) {
         cerr << "Missing arguments. " << endl;
         return 1;
     }
-    
-    // Open file: 
-    yuvReader reader(argv[1]); 
+
+    // Open file:
+    rawReader reader(argv[1]);
     if (!reader.sourceGood()) {
         exit(1);
     }
 
     // Play file:
-    running_e running = PLAY; 
+    running_e running = PLAY;
     while (running != STOP) {
 
-        // Pause if at the end of the video: 
+        // Pause if at the end of the video:
         if (reader.lastFrame()) {
-            running = PAUSE; 
+            running = PAUSE;
         }
 
-        // Next frame: 
+        // Next frame:
         if (running == PLAY) reader.showFrame(reader.nextFrame());
 
         // Check user key:
@@ -158,44 +193,44 @@ int main(int argc, char* argv[]) {
 
         switch (key) {
 
-            // Nothing: 
-            case -1 : 
+            // Nothing:
+            case -1 :
                 break;
 
-            // 'q': 
-            case 113 : 
-                running = STOP; 
-                break; 
+            // 'q':
+            case 113 :
+                running = STOP;
+                break;
 
-            // ESC: 
-            case 27 : 
+            // ESC:
+            case 27 :
                 running = STOP;
                 break;
 
             // SPACE:
-            case 32 : 
+            case 32 :
                 if      (running == PLAY)  running = PAUSE;
                 else if (running == PAUSE) running = PLAY;
-                break; 
+                break;
 
             // Right arrow:
-            case 65363 : 
+            case 65363 :
                 reader.showFrame(reader.nextFrame());
                 break;
 
             // Right arrow:
-            case 46 : 
-                reader.showFrame(reader.nextFrame()); 
+            case 46 :
+                reader.showFrame(reader.nextFrame());
                 break;
 
-            // Left arrow: 
-            case 65361 : 
-                reader.showFrame(reader.prevFrame()); 
+            // Left arrow:
+            case 65361 :
+                reader.showFrame(reader.prevFrame());
                 break;
 
-            // Left arrow: 
-            case 44 : 
-                reader.showFrame(reader.prevFrame()); 
+            // Left arrow:
+            case 44 :
+                reader.showFrame(reader.prevFrame());
                 break;
 
             // Other:
