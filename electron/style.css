@@ -1,0 +1,142 @@
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 0;
+    font-family: sans-serif;
+    color: #C5C5C5;
+    overflow: hidden;
+}
+
+/* General */
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
+/* Icons */
+.fa {
+    font-size: 24px;
+    margin: 13px;
+    color: #C5C5C5;
+    cursor: pointer;
+    vertical-align: top;
+}
+
+.fa:hover {
+    color: #FFFFFF;
+}
+
+.fa:active {
+    color: #FF8700;
+}
+
+.fa.on {
+    color: #FFA000;
+}
+
+/* Upper bar */
+#upperBar, #cropBar {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 50px;
+    line-height: 30px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.5);
+    transition: margin-top 0.3s ease-out;
+}
+
+#upperBar.hidden, #cropBar.hidden {
+    margin-top: -50px;
+}
+
+.frameLabel {
+    font-size: 12px;
+    width: 70px;
+    padding: 10px;
+    display: inline-block;
+    text-align: center;
+    vertical-align: top;
+}
+
+/* TrackBar */
+#trackBar {
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    margin: 23.5px 0;
+    vertical-align: top;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 3px;
+    cursor: pointer;
+    box-shadow: 1px 1px 1px rgba(0, 0, 0, 0), 0px 0px 1px rgba(13, 13, 13, 0);
+    background: none;
+    border: none;
+    z-index: 1;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3), 0px 0px 1px rgba(13, 13, 13, 0.3);
+    border: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50px;
+    background: #FFFFFF;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -6.5px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+/* Crop bars */
+#cropBarsContainer {
+    position: relative;
+    height: 50px;
+    display: inline-block;
+}
+
+#cropStartBar {
+    position: absolute;
+    left: 0;
+}
+
+#cropEndBar {
+    position: absolute;
+    right: 0;
+}
+
+#cropBarsContainer input[type=range] {
+    pointer-events: none;
+}
+
+/* Lower bar */
+#lowerBar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50px;
+    line-height: 30px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.5);
+    text-align: center;
+    transition: margin-bottom 0.3s ease-out;
+}
+
+#lowerBar.hidden {
+    margin-bottom: -50px;
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+
+        <!-- Stylesheet -->
+        <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="style.css">
+
+        <!-- Scripts -->
+        <script src="rawUtility.js"></script>
+        <script src="angular.min.js"></script>
+
+    </head>
+
+    <body ng-app="RawUtility" ng-controller="appController">
+
+        <!-- Uppper command bar -->
+        <div id="upperBar" ng-class="{'hidden': barsHidden || cropMode }" ng-mouseenter="openBars()" ng-mouseleave="closeBars()">
+            <span class="frameLabel">{{ util.currentFrame }}</span>
+            <input type="range" id="trackBar" min="1" max="{{ util.videoFrames }}" step="1" ng-model="util.currentFrame" ng-change="showFrame()"/>
+            <span class="frameLabel">{{ util.videoFrames }}</span>
+        </div>
+
+        <!-- Crop command bar -->
+        <div id="cropBar" ng-class="{'hidden': barsHidden || !cropMode }" ng-mouseenter="openBars()" ng-mouseleave="closeBars()">
+            <span class="frameLabel">{{ cropStart }}</span>
+            <div id="cropBarsContainer">
+                <input type="range" id="cropStartBar" min="1" max="2"                      step="1" ng-model="cropStart" ng-change="adjustCropBars('start')"/>
+                <input type="range" id="cropEndBar"   min="2" max="{{ util.videoFrames }}" step="1" ng-model="cropEnd"   ng-change="adjustCropBars('end')"/>
+            </div>
+            <span class="frameLabel">{{ cropEnd }}</span>
+            <i class="fa fa-floppy-o" aria-hidden="true" ng-click="cropFile()"></i>
+        </div>
+
+        <!-- Video container: -->
+        <canvas id="canvas" width=640 height=480 ng-click="play()" ng-mousemove="checkMousePosition($event)"></canvas>
+
+        <!-- Lower command bar -->
+        <div id="lowerBar" ng-class="{'hidden': barsHidden}" ng-mouseenter="openBars()" ng-mouseleave="closeBars()">
+            <i class="fa fa-crop left"     aria-hidden="true" ng-click="toggleCrop();" ng-class="{'on': cropMode}"></i>
+            <i class="fa fa-fast-backward" aria-hidden="true" ng-click="play(false); showFrame('first');"></i>
+            <i class="fa fa-step-backward" aria-hidden="true" ng-click="play(false); showFrame('prev');"></i>
+            <i class="fa fa-fw"            aria-hidden="true" ng-click="play()" ng-class="{'fa-pause': playing, 'fa-play': !playing}"></i>
+            <i class="fa fa-step-forward"  aria-hidden="true" ng-click="play(false); showFrame('next');"></i>
+            <i class="fa fa-fast-forward"  aria-hidden="true" ng-click="play(false); showFrame('last');"></i>
+            <i class="fa fa-cog right"     aria-hidden="true"></i>
+        </div>
+
+        <!-- Modules, Controllers -->
+        <script src="appController.js"></script>
+
+    </body>
+
+</html>

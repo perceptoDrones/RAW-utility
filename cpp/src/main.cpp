@@ -82,7 +82,7 @@ public:
             for (int i = 0; i < videoHeight; i++) {
                 for (int j = 0; j < videoWidth; j++) {
                     cv::Vec3b YUV;
-                    YUV[0] = data[i*videoWidth+j];
+                    YUV[0] = data[i * videoWidth + j];
                     YUV[2] = data[videoWidth * videoHeight +                                        (i / 2) * (videoWidth / 2) + (j / 2)];
                     YUV[1] = data[videoWidth * videoHeight + (videoWidth / 2) * (videoHeight / 2) + (i / 2) * (videoWidth / 2) + (j / 2)];
                     mat.at<cv::Vec3b>(i, j) = YUV;
