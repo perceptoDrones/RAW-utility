@@ -8,6 +8,7 @@ var RawUtility = function(ctx) {
     this.ctx          = ctx;
     this.currentFrame = 0;
     this.videoFrames  = 3;
+    this.showingFrame = false;
 
     // Initialize:
     this.init = function(options) {
@@ -36,6 +37,12 @@ var RawUtility = function(ctx) {
     // Show frame:
     this.showFrame = function(frame) {
 
+        // Skip if still handling a previous frame:
+        if (this.showingFrame) return;
+
+        // Start working:
+        this.showingFrame = true;
+
         // Make sure the requested frame is in bound:
         if (frame < 1) frame = 1;
         if (frame > this.videoFrames) frame = this.videoFrames;
@@ -46,81 +53,84 @@ var RawUtility = function(ctx) {
         // Set current frame:
         this.currentFrame = frame;
 
+        // Allocate new buffer:
+        var buffer = new Buffer(this.frameSize);
+
         // Read frame data:
-        var buffer = new Buffer(this.frameSize); // TODO: is this a must?
-        fs.read(this.fd, buffer, 0, buffer.length, (frame - 1) * this.frameSize, (err, bytesRead, data) => {
+        fs.readSync(this.fd, buffer, 0, buffer.length, (frame - 1) * this.frameSize);
 
-            // Error in reading data:
-            if (err) throw err;
+        // Allocate image data:
+        var x = new Uint8ClampedArray(this.videoWidth * this.videoHeight * 4);
 
-            // Allocate image data:
-            var x = new Uint8ClampedArray(this.videoWidth * this.videoHeight * 4);
+        // Arrange & show YUV:
+        if (this.useYUV) {
+            var res  = this.videoWidth * this.videoHeight;
+            var hlin = Math.floor(this.videoWidth / 2);
+            var qres = hlin * Math.floor(this.videoHeight / 2);
+            for (i = 0; i < this.videoHeight / 2; i++) {
+                for (j = 0; j < this.videoWidth / 2; j++) {
+                    var uvbase = res + i * hlin + j;
+                    var U = buffer[uvbase + qres] - 128;
+                    var V = buffer[uvbase] - 128;
 
-            // Arrange & show YUV:
-            if (this.useYUV) {
-                var res  = this.videoWidth * this.videoHeight;
-                var hlin = Math.floor(this.videoWidth / 2);
-                var qres = hlin * Math.floor(this.videoHeight / 2);
-                for (i = 0; i < this.videoHeight / 2; i++) {
-                    for (j = 0; j < this.videoWidth / 2; j++) {
-                        var uvbase = res + i * hlin + j;
-                        var U = data[uvbase + qres] - 128;
-                        var V = data[uvbase] - 128;
+                    var base = (2 * i) * this.videoWidth + (2 * j);
+                    var Y = buffer[base];
+                    base = 4 * base;
+                    x[base + 0] = Math.round(Y + 1.40200 * U);
+                    x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
+                    x[base + 2] = Math.round(Y + 1.77200 * V)
+                    x[base + 3] = 255;
 
-                        var base = (2 * i) * this.videoWidth + (2 * j);
-                        var Y = data[base];
-                        base = 4 * base;
-                        x[base + 0] = Math.round(Y + 1.40200 * U);
-                        x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
-                        x[base + 2] = Math.round(Y + 1.77200 * V)
-                        x[base + 3] = 255;
+                    base = (2 * i) * this.videoWidth + (2 * j + 1);
+                    Y = buffer[base];
+                    base = 4 * base;
+                    x[base + 0] = Math.round(Y + 1.40200 * U);
+                    x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
+                    x[base + 2] = Math.round(Y + 1.77200 * V)
+                    x[base + 3] = 255;
 
-                        base = (2 * i) * this.videoWidth + (2 * j + 1);
-                        Y = data[base];
-                        base = 4 * base;
-                        x[base + 0] = Math.round(Y + 1.40200 * U);
-                        x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
-                        x[base + 2] = Math.round(Y + 1.77200 * V)
-                        x[base + 3] = 255;
+                    base = (2 * i + 1) * this.videoWidth + (2 * j);
+                    Y = buffer[base];
+                    base = 4 * base;
+                    x[base + 0] = Math.round(Y + 1.40200 * U);
+                    x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
+                    x[base + 2] = Math.round(Y + 1.77200 * V)
+                    x[base + 3] = 255;
 
-                        base = (2 * i + 1) * this.videoWidth + (2 * j);
-                        Y = data[base];
-                        base = 4 * base;
-                        x[base + 0] = Math.round(Y + 1.40200 * U);
-                        x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
-                        x[base + 2] = Math.round(Y + 1.77200 * V)
-                        x[base + 3] = 255;
-
-                        base = (2 * i + 1) * this.videoWidth + (2 * j + 1);
-                        Y = data[base];
-                        base = 4 * base;
-                        x[base + 0] = Math.round(Y + 1.40200 * U);
-                        x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
-                        x[base + 2] = Math.round(Y + 1.77200 * V)
-                        x[base + 3] = 255;
-                    }
+                    base = (2 * i + 1) * this.videoWidth + (2 * j + 1);
+                    Y = buffer[base];
+                    base = 4 * base;
+                    x[base + 0] = Math.round(Y + 1.40200 * U);
+                    x[base + 1] = Math.round(Y - 0.34414 * V - 0.71414 * U)
+                    x[base + 2] = Math.round(Y + 1.77200 * V)
+                    x[base + 3] = 255;
                 }
             }
+        }
 
-            // Arrange & show RGB:
-            else {
-                for (i = 0, j = 0; i < this.videoWidth * this.videoHeight * 4; i++) {
-                    if (i % 4 == 3) {
-                        x[i] = 255;
-                    } else {
-                        x[i] = data[j];
-                        j++;
-                    }
+        // Arrange & show RGB:
+        else {
+            for (i = 0, j = 0; i < this.videoWidth * this.videoHeight * 4; i++) {
+                if (i % 4 == 3) {
+                    x[i] = 255;
+                } else {
+                    x[i] = buffer[j];
+                    j++;
                 }
             }
+        }
 
-            // Create image data object:
-            var data = new ImageData(x, this.videoWidth, this.videoHeight);
+        // Clear buffer:
+        buffer = null;
 
-            // Draw frame:
-            this.ctx.putImageData(data, 0, 0);
+        // Create image data object:
+        var data = new ImageData(x, this.videoWidth, this.videoHeight);
 
-        });
+        // Draw frame:
+        this.ctx.putImageData(data, 0, 0);
+
+        // Stop working:
+        this.showingFrame = false;
 
     }
 
