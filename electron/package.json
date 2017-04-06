@@ -4,8 +4,14 @@
   "version": "0.1.0",
   "author": "Sagi Blonder <sagi@percepto.co>",
   "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package_win": "electron-packager ./ rawUtility --platform=win32 --arch=x64 --version 1.2.1 --overwrite --icon=./icon.ico"
+  },
   "devDependencies": {
-    "electron-packager": "^7.0.3"
+    "command-line-args": "^3.0.0",
+    "electron-packager": "^7.0.3",
+    "electron-prebuilt": "^1.2.1"
   },
   "repository": {
     "type": "git",
