@@ -73,7 +73,7 @@ public:
         }
 
         // Image construct:
-        cv::Mat mat(480, 640, CV_8UC3);
+        cv::Mat mat(videoHeight, videoWidth, CV_8UC3);
 
         // for YUV:
         if (useYUV) {
